@@ -1,0 +1,78 @@
+---
+pcx_content_type: configuration
+title: Fauna
+---
+
+import { Render } from "~/components";
+
+[Fauna](https://fauna.com/) is a distributed document-relational database that combines the flexibility of documents with the power of a relational, ACID compliant database that scales across regions, clouds or the globe.
+
+<Render file="database_integrations_definition" />
+
+## Set up an integration with Fauna
+
+You need to have an existing Fauna database to connect to.
+
+1. Open the [Fauna dashboard](https://dashboard.fauna.com/) in your browser and log in to your Fauna account.
+
+   In the Fauna dashboard:
+
+   1. Select **CREATE DATABASE**.
+   2. Provide a valid name.
+   3. Select a [Region Group](https://docs.fauna.com/fauna/current/administration/region_groups).
+   4. Select **CREATE**.
+
+2. Create a new collection named **Products**. Enter the FQL query in the **SHELL** window on right side of the screen.
+
+```js title="Create a new collection"
+Collection.create({ name: "Products" });
+```
+
+3. Select **Run**. You will see an output similar to the following.
+
+```js title="Output"
+{
+  name: "Products",
+  coll: Collection,
+  ts: "<timestamp>",
+  indexes: {},
+  constraints: []
+}
+```
+
+4. Add the Fauna integration to your Worker:
+
+   1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com) and select your account.
+   2. In **Account Home**, select **Workers & Pages**.
+   3. In **Overview**, select your Worker.
+   4. Select **Integrations** > **Fauna**.
+   5. Follow the setup flow. Log in to your Fauna account and select the database created in step 1.
+
+5. Install [the Fauna JavaScript driver](https://github.com/fauna/fauna-js) in your newly created Worker project.
+
+```sh title="Install the Fauna driver"
+npm install fauna
+```
+
+6. The following example shows how to make a query to your Fauna database in a Worker.
+
+```js title="Query your Fauna database"
+import { Client, fql } from "fauna";
+
+export default {
+	async fetch(request, env) {
+		const client = new Client({
+			secret: evn.DATABASE_KEY,
+		});
+
+		const result = await client.query(`Products.all()`);
+
+		return new Response(JSON.stringify(result.data), {
+			status: 200,
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+	},
+};
+```

@@ -1,5 +1,5 @@
 ---
-updated: 2023-09-13
+updated: 2024-09-29
 difficulty: Beginner
 content_type: 📝 Tutorial
 pcx_content_type: tutorial
@@ -76,7 +76,7 @@ Select **Run**. You will see an output similar to the following.
 
 ### Create a secret key
 
-You must create a secret key to connect to the database from your Worker.
+You must create a secret key to connect to the database from your development environment.
 
 To create a secret key:
 
@@ -118,27 +118,45 @@ Update the `wrangler.toml` file to set the name for the Worker.
 name = "fauna-workers"
 ```
 
-### Add your Fauna secret key as a secret
+### Add your Fauna database key for local development
 
-Before developing your Worker, add your Fauna secret key as a [secret](/workers/configuration/secrets/).
+Before developing your Worker, add your Fauna database key as a [secret](/workers/configuration/secrets/).
 
 There are two types of secrets for [development](/workers/configuration/secrets/#local-development-with-secrets) or [production](/workers/configuration/secrets/#secrets-on-deployed-workers).
 
 For development, add a `.dev.vars` file on the project root and write your secret.
 
 ```plain title=".dev.vars"
-FAUNA_SECRET=<YOUR SECRET>
+DATABASE_KEY=<YOUR SECRET>
 ```
 
-For production, store your secret safely with [`wrangler secret put` command](/workers/wrangler/commands/#put-3):
+### Add Fauna integration
 
-```sh title="Store your Fauna secret"
-npx wrangler secret put FAUNA_SECRET
+Deploy your Worker to Cloudflare to ensure that everything is set up correctly:
+
+```sh
+npm run deploy
 ```
 
-When prompted, paste the Fauna server secret you obtained earlier.
+- Login to your [Cloudflare dashboard](https://dash.cloudflare.com/).
+- Select the _integrations_ tab and click on the _Fauna_ integration.
+  ![Selecting the fauna integration](~/assets/images/workers/tutorials/store-data-with-fauna/integrate_fauna.png).
+- Login to your Fauna account.
+- Select the Fauna database you created earlier.
+- Select `server` role as your database role.
+- Select _Finish_.
+- Navigate to settings tab and select _Variables_. Notice that a new variable `DATABASE_KEY`
+  is added to your Worker.
 
-The `FAUNA_SECRET` secret is now injected automatically into your Worker code at runtime.
+The Fauna `DATABASE_KEY` secret is now injected automatically into your Worker code at runtime.
+
+:::note
+
+The generated `DATABASE_KEY` secret can also be managed from the Fauna dashboard.
+To Access it login to your [Fauna dashboard](https://dashboard.fauna.com/) and navigate to
+your database and then select _Keys_.
+
+:::
 
 ### Install dependencies
 
@@ -167,7 +185,7 @@ import { Hono } from "hono";
 import { Client, fql, ServiceError } from "fauna";
 
 type Bindings = {
-	FAUNA_SECRET: string;
+	DATABASE_KEY: string;
 };
 
 type Variables = {
@@ -186,7 +204,7 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 app.use("*", async (c, next) => {
 	const faunaClient = new Client({
-		secret: c.env.FAUNA_SECRET,
+		secret: c.env.DATABASE_KEY,
 	});
 	c.set("faunaClient", faunaClient);
 	await next();
@@ -204,14 +222,14 @@ This is custom middleware to initialize the Fauna client and set the instance wi
 ```js title="Custom middleware for the Fauna Client"
 app.use("*", async (c, next) => {
 	const faunaClient = new Client({
-		secret: c.env.FAUNA_SECRET,
+		secret: c.env.DATABASE_KEY,
 	});
 	c.set("faunaClient", faunaClient);
 	await next();
 });
 ```
 
-You can access the `FAUNA_SECRET` environment variable from `c.env.FAUNA_SECRET`. Workers run on a [custom JavaScript runtime](https://developers.cloudflare.com/workers/runtime-apis/nodejs/) instead of Node.js, so you cannot use `process.env` to access your environment variables.
+You can access the `DATABASE_KEY` environment variable from `c.env.DATABASE_KEY`. Workers run on a [custom JavaScript runtime](https://developers.cloudflare.com/workers/runtime-apis/nodejs/) instead of Node.js, so you cannot use `process.env` to access your environment variables.
 
 ### Create product documents
 
