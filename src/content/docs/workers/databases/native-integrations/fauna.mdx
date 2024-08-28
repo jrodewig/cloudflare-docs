@@ -5,82 +5,80 @@ title: Fauna
 
 import { Render } from "~/components";
 
-[Fauna](https://fauna.com/) is a distributed document-relational database that combines the flexibility of documents with the power of a relational, ACID compliant database that scales across regions, clouds or the globe.
+[Fauna](https://fauna.com/) is a distributed document-relational database that combines the flexibility of documents with the power of a relational, ACID-compliant database. Fauna databases are serverless and automatically scale across regions, clouds, or the globe.
 
 <Render file="database_integrations_definition" />
 
 ## Set up an integration with Fauna
 
-You need to have an existing Fauna database to connect to.
+To set up an integration with Fauna:
 
-1. Open the [Fauna dashboard](https://dashboard.fauna.com/) in your browser and log in to your Fauna account.
+1. You need to have an existing Fauna database to connect to. To create a database, log in to the [Fauna Dashboard](https://dashboard.fauna.com/) and click **Create Database**. When prompted, select your preferred [Fauna region group](https://docs.fauna.com/fauna/current/manage/region-groups/) and other database settings.
 
-   In the Fauna dashboard:
+2. Create a `Products` collection for the database with the following query. To run the query in the Fauna Dashboard, select your database and click the **Shell** tab:
 
-   1. Select **CREATE DATABASE**.
-   2. Provide a valid name.
-   3. Select a [Region Group](https://docs.fauna.com/fauna/current/administration/region_groups).
-   4. Select **CREATE**.
+   ```js title="Create a new collection"
+   Collection.create({ name: "Products" });
+   ```
 
-2. Create a new collection named **Products**. Enter the FQL query in the **SHELL** window on right side of the screen.
+   The query outputs a result similar to the following:
 
-```js title="Create a new collection"
-Collection.create({ name: "Products" });
-```
+   ```js title="Output"
+   {
+     name: "Products",
+     coll: Collection,
+     ts: Time("2099-08-28T15:03:53.773Z"),
+     history_days: 0,
+     indexes: {},
+     constraints: []
+   }
+   ```
 
-3. Select **Run**. You will see an output similar to the following.
-
-```js title="Output"
-{
-  name: "Products",
-  coll: Collection,
-  ts: "<timestamp>",
-  indexes: {},
-  constraints: []
-}
-```
-
-4. Add the Fauna integration to your Worker:
+3. Add the Fauna integration to your Worker:
 
    1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com) and select your account.
    2. In **Account Home**, select **Workers & Pages**.
    3. In **Overview**, select your Worker.
    4. Select **Integrations** > **Fauna**.
-   5. Follow the setup flow. Log in to your Fauna account and select the database created in step 1.
+   5. Follow the setup flow. Log in to your Fauna account and select your database.
 
-5. Install [the Fauna JavaScript driver](https://github.com/fauna/fauna-js) in your newly created Worker project.
+4. In your Worker, install the [Fauna JavaScript driver](https://github.com/fauna/fauna-js) in your Worker project:
 
-```sh title="Install the Fauna driver"
-npm install fauna
-```
+   ```sh title="Install the Fauna driver"
+   npm install fauna
+   ```
 
-6. The following example shows how to make a query to your Fauna database in a Worker.
+5. The following example shows how to query your Fauna database in a Worker.
 
-```js title="Query your Fauna database"
-import { Client, fql } from "fauna";
+   The integration automatically creates a [Fauna authentication key](https://docs.fauna.com/fauna/current/learn/security/keys/) with the role you selected during integration setup The integration adds the Fauna authentication key's secret to the Worker's `DATABASE_KEY` environment variable.
 
-export default {
-	async fetch(request, env) {
-		const client = new Client({
-			secret: evn.DATABASE_KEY,
-		});
+   ```js title="Query your Fauna database"
+   import { Client, fql } from "fauna";
 
-		const result = await client.query(`Products.all()`);
+   export default {
+   	async fetch(request, env) {
+   		const client = new Client({
+   			secret: env.DATABASE_KEY,
+   		});
 
-		return new Response(JSON.stringify(result.data), {
-			status: 200,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-	},
-};
-```
+   		const result = await client.query(`Products.all()`);
 
-7. You can manage the Cloudflare Fauna integration from the [Fauna dashboard](https://dashboard.fauna.com/):
-   1. Select your database.
-   2. Select _Keys_ tab.
-   3. Under _Keys_, your Cloudflare Worker integration key will be listed. You can revoke the key to disable the integration.
-      ![Fauna database key tab](~/assets/images/workers/databases/native-integrations/fauna_keys_tab.png).
-   4. In Fauna dashboard OAuth apps appear under account settings. You can disable the Cloudflare app to revoke the integration.
-      ![OAuth apps in Fauna](~/assets/images/workers/databases/native-integrations/fauna_oauth.png).
+   		return new Response(JSON.stringify(result.data), {
+   			status: 200,
+   			headers: {
+   				"Content-Type": "application/json",
+   			},
+   		});
+   	},
+   };
+   ```
+
+6. You can manage the Cloudflare Fauna integration from the [Fauna Dashboard](https://dashboard.fauna.com/):
+
+   - Select your database and click the **Keys** tab. Keys for a Cloudflare Worker integration are prepended with `_cloudflare_key_`. You can delete the key to disable the integration.
+
+     ![Key tab for a database in the Fauna Dashboard](~/assets/images/workers/databases/native-integrations/fauna_keys_tab.png)
+
+   - The Fauna **Account Settings** page lists each Cloudflare Worker integration under **OAuth Apps**. You can delete the app to disable the integration.
+
+     ![OAuth apps in Fauna](~/assets/images/workers/databases/native-integrations/fauna_oauth.png)
